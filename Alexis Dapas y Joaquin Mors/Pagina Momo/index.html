@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NuevaVision</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    header {
+      background-color: #1f1f1f;
+      padding: 2rem;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #00ffcc;
+    }
+
+    .section {
+      padding: 3rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section h2 {
+      color: #00ffcc;
+      margin-bottom: 1rem;
+    }
+
+    .courses {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .course {
+      background-color: #1e1e1e;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 255, 128, 0.2);
+      border: 2px solid #00ffcc10;
+    }
+
+    .course:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc33, 0 0 60px #00ffcc22;
+    }
+
+    .course img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+      border-bottom: 2px solid #00ffcc30;
+    }
+
+    .course-content {
+      padding: 1.5rem;
+    }
+
+    .course-content h3 {
+      margin-top: 0.5rem;
+      color: #00ffcc;
+    }
+
+    .quote {
+      font-style: italic;
+      font-size: 1.2rem;
+      border-left: 4px solid #00ffcc;
+      padding-left: 1rem;
+      margin: 2rem 0;
+    }
+
+    .trusted {
+      background-color: #181818;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .trusted h2 {
+      color: #00ffcc;
+      margin-bottom: 1.5rem;
+    }
+
+    .trusted-images {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .trusted-images img {
+      width: 250px;
+      height: auto;
+      border-radius: 8px;
+      border: 2px solid #333;
+    }
+
+    footer {
+      background-color: #1f1f1f;
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #888;
+    }
+    .course img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        object-position: top; /* <- Enfoca el contenido en la parte superior */
+        display: block;
+        border-bottom: 2px solid #00ffcc30;
+    }
+    .curso-disciplina img {
+        object-position: center 50%;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    NuevaVision
+  </header>
+
+  <div class="section">
+    <h2>Bienvenido a tu Nueva Visión</h2>
+    <p>Transforma tu vida con nuestros cursos de superación personal, estoicismo, disciplina y motivación. Da el primer paso hacia tu mejor versión.</p>
+  </div>
+
+  <div class="section">
+    <h2>Nuestros Cursos</h2>
+    <div class="courses">
+      <!-- Curso 1 -->
+      <div class="course">
+        <img src="curso-estoicismo.jpg" alt="Curso de Estoicismo">
+        <div class="course-content">
+          <h3>Introducción al Estoicismo</h3>
+          <p>Este hombre cambio su vida, ahora es tu turno.</p>
+        </div>
+      </div>
+
+      <!-- Curso 2 -->
+      <div class="course curso-disciplina">
+      <img src="curso-disciplina.jpg" alt="Curso de Disciplina">
+      <div class="course-content">
+          <h3>Disciplina y Hábitos</h3>
+          <p>Desarrolla hábitos duraderos y mejora tu enfoque diario con técnicas probadas de alta productividad.</p>
+      </div>
+      </div>
+
+      <!-- Curso 3 -->
+      <div class="course">
+        <img src="curso-motivacion.gif" alt="Curso de Motivación">
+        <div class="course-content">
+          <h3>Motivación que perdura</h3>
+          <p>Motívate de forma constante entendiendo tu propósito y cultivando la resiliencia.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Frase del Día</h2>
+    <p class="quote">"Yo soy un tipo que me tildan de bobo pero tengo 3 propiedades." – Geronimo Benavides</p>
+  </div>
+
+  <div class="trusted">
+    <h2>Personas que confían en nosotros</h2>
+    <div class="trusted-images">
+      <img src="a6d793a7-01a2-4dde-8429-d361c343731b.png" alt="Persona confiando en NuevaVision">
+    </div>
+  </div>
+
+  <footer>
+    © 2025 NuevaVision. Todos los derechos reservados.
+  </footer>
+</body>
+</html>
