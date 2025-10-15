@@ -50,23 +50,15 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.4);
   }
 
-  .rojo {
-    color: crimson;
-  }
+  .rojo { color: crimson; }
 
   .carta span {
     position: absolute;
     font-size: 16px;
   }
 
-  .carta .sup {
-    top: 5px; left: 8px;
-  }
-
-  .carta .inf {
-    bottom: 5px; right: 8px;
-    transform: rotate(180deg);
-  }
+  .carta .sup { top: 5px; left: 8px; }
+  .carta .inf { bottom: 5px; right: 8px; transform: rotate(180deg); }
 
   button {
     background: gold;
@@ -80,9 +72,7 @@
     transition: 0.3s;
   }
 
-  button:hover {
-    background: #ffd700cc;
-  }
+  button:hover { background: #ffd700cc; }
 
   #mensaje {
     font-size: 1.3rem;
@@ -95,121 +85,169 @@
     display: block;
     margin-top: 20px;
   }
+
+  /* Saldo arriba */
+  #saldo {
+    position: fixed;
+    top: 10px;
+    right: 15px;
+    color: gold;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
-<h1>🃏 Blackjack</h1>
+  <div id="saldo">💰 Saldo: $0</div>
+  <h1>🃏 Blackjack</h1>
 
-<div class="mesa">
-  <div>
-    <h2>Crupier</h2>
-    <div id="dealer" class="hand"></div>
+  <div class="mesa">
+    <div>
+      <h2>Crupier</h2>
+      <div id="dealer" class="hand"></div>
+    </div>
+
+    <div>
+      <h2>Tú</h2>
+      <div id="player" class="hand"></div>
+    </div>
   </div>
 
   <div>
-    <h2>Tú</h2>
-    <div id="player" class="hand"></div>
+    <button onclick="pedirCarta()">Pedir carta</button>
+    <button onclick="plantarse()">Plantarse</button>
+    <button onclick="reiniciar()">Reiniciar</button>
   </div>
-</div>
 
-<div>
-  <button onclick="pedirCarta()">Pedir carta</button>
-  <button onclick="plantarse()">Plantarse</button>
-  <button onclick="reiniciar()">Reiniciar</button>
-</div>
+  <p id="mensaje"></p>
+  <a href="index.html">⬅ Volver al menú</a>
 
-<p id="mensaje"></p>
-<a href="index.html">⬅ Volver al menú</a>
-
-<script>
-const palos = ['♠','♥','♦','♣'];
-const valores = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-let mazo = [], jugador = [], crupier = [], fin = false;
-
-function crearMazo(){
-  mazo = [];
-  for(let p of palos){
-    for(let v of valores){
-      mazo.push({valor:v, palo:p});
+  <!-- SISTEMA DE DINERO COMPARTIDO -->
+  <script>
+    if (!localStorage.getItem("casino_saldo")) {
+      localStorage.setItem("casino_saldo", "1000");
     }
-  }
-  mazo.sort(()=>Math.random()-0.5);
-}
 
-function valorCarta(c){
-  if(['J','Q','K'].includes(c.valor)) return 10;
-  if(c.valor==='A') return 11;
-  return parseInt(c.valor);
-}
-
-function total(mano){
-  let suma = mano.reduce((a,c)=>a+valorCarta(c),0);
-  // Ajuste por ases
-  mano.filter(c=>c.valor==='A').forEach(()=>{ if(suma>21) suma-=10; });
-  return suma;
-}
-
-function mostrarMano(id, mano, ocultarPrimera=false){
-  const div = document.getElementById(id);
-  div.innerHTML = '';
-  mano.forEach((carta,i)=>{
-    const card = document.createElement('div');
-    card.classList.add('carta');
-    if(carta.palo==='♥' || carta.palo==='♦') card.classList.add('rojo');
-    if(ocultarPrimera && i===0 && !fin){
-      card.style.background = 'linear-gradient(45deg, #555, #222)';
-      card.style.color = 'transparent';
-      card.innerHTML = '';
-    } else {
-      card.innerHTML = `
-        <span class="sup">${carta.valor}${carta.palo}</span>
-        ${carta.palo}
-        <span class="inf">${carta.valor}${carta.palo}</span>
-      `;
+    function getSaldo() {
+      return parseInt(localStorage.getItem("casino_saldo"));
     }
-    div.appendChild(card);
-  });
-}
 
-function pedirCarta(){
-  if(fin) return;
-  jugador.push(mazo.pop());
-  mostrarMano('player', jugador);
-  if(total(jugador)>21){
-    document.getElementById('mensaje').textContent = "💥 Te pasaste. Pierdes.";
-    fin = true;
-    mostrarMano('dealer', crupier, false);
-  }
-}
+    function setSaldo(nuevo) {
+      localStorage.setItem("casino_saldo", nuevo);
+      actualizarDisplaySaldo();
+    }
 
-function plantarse(){
-  if(fin) return;
-  while(total(crupier)<17) crupier.push(mazo.pop());
-  mostrarMano('dealer', crupier, false);
+    function sumarSaldo(cantidad) {
+      setSaldo(getSaldo() + cantidad);
+    }
 
-  const tJ = total(jugador);
-  const tC = total(crupier);
+    function restarSaldo(cantidad) {
+      setSaldo(getSaldo() - cantidad);
+    }
 
-  let msg = '';
-  if(tC>21 || tJ>tC) msg = "🏆 ¡Ganaste!";
-  else if(tC===tJ) msg = "🤝 Empate.";
-  else msg = "😞 Pierdes.";
+    function actualizarDisplaySaldo() {
+      const elem = document.getElementById("saldo");
+      if (elem) elem.textContent = `💰 Saldo: $${getSaldo()}`;
+    }
 
-  document.getElementById('mensaje').textContent = msg;
-  fin = true;
-}
+    document.addEventListener("DOMContentLoaded", actualizarDisplaySaldo);
+  </script>
 
-function reiniciar(){
-  crearMazo();
-  jugador = [mazo.pop(), mazo.pop()];
-  crupier = [mazo.pop(), mazo.pop()];
-  fin = false;
-  document.getElementById('mensaje').textContent = '';
-  mostrarMano('player', jugador);
-  mostrarMano('dealer', crupier, true);
-}
+  <!-- LÓGICA DEL BLACKJACK -->
+  <script>
+    const palos = ['♠','♥','♦','♣'];
+    const valores = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    let mazo = [], jugador = [], crupier = [], fin = false;
 
-reiniciar();
-</script>
+    function crearMazo(){
+      mazo = [];
+      for(let p of palos){
+        for(let v of valores){
+          mazo.push({valor:v, palo:p});
+        }
+      }
+      mazo.sort(()=>Math.random()-0.5);
+    }
+
+    function valorCarta(c){
+      if(['J','Q','K'].includes(c.valor)) return 10;
+      if(c.valor==='A') return 11;
+      return parseInt(c.valor);
+    }
+
+    function total(mano){
+      let suma = mano.reduce((a,c)=>a+valorCarta(c),0);
+      mano.filter(c=>c.valor==='A').forEach(()=>{ if(suma>21) suma-=10; });
+      return suma;
+    }
+
+    function mostrarMano(id, mano, ocultarPrimera=false){
+      const div = document.getElementById(id);
+      div.innerHTML = '';
+      mano.forEach((carta,i)=>{
+        const card = document.createElement('div');
+        card.classList.add('carta');
+        if(carta.palo==='♥' || carta.palo==='♦') card.classList.add('rojo');
+        if(ocultarPrimera && i===0 && !fin){
+          card.style.background = 'linear-gradient(45deg, #555, #222)';
+          card.style.color = 'transparent';
+          card.innerHTML = '';
+        } else {
+          card.innerHTML = `
+            <span class="sup">${carta.valor}${carta.palo}</span>
+            ${carta.palo}
+            <span class="inf">${carta.valor}${carta.palo}</span>
+          `;
+        }
+        div.appendChild(card);
+      });
+    }
+
+    function pedirCarta(){
+      if(fin) return;
+      jugador.push(mazo.pop());
+      mostrarMano('player', jugador);
+      if(total(jugador)>21){
+        document.getElementById('mensaje').textContent = "💥 Te pasaste. Pierdes. -$100";
+        restarSaldo(100);
+        fin = true;
+        mostrarMano('dealer', crupier, false);
+      }
+    }
+
+    function plantarse(){
+      if(fin) return;
+      while(total(crupier)<17) crupier.push(mazo.pop());
+      mostrarMano('dealer', crupier, false);
+
+      const tJ = total(jugador);
+      const tC = total(crupier);
+
+      let msg = '';
+      if(tC>21 || tJ>tC) {
+        msg = "🏆 ¡Ganaste! +$100";
+        sumarSaldo(100);
+      } else if(tC===tJ) {
+        msg = "🤝 Empate.";
+      } else {
+        msg = "😞 Pierdes. -$100";
+        restarSaldo(100);
+      }
+
+      document.getElementById('mensaje').textContent = msg;
+      fin = true;
+    }
+
+    function reiniciar(){
+      crearMazo();
+      jugador = [mazo.pop(), mazo.pop()];
+      crupier = [mazo.pop(), mazo.pop()];
+      fin = false;
+      document.getElementById('mensaje').textContent = '';
+      mostrarMano('player', jugador);
+      mostrarMano('dealer', crupier, true);
+    }
+
+    reiniciar();
+  </script>
 </body>
 </html>

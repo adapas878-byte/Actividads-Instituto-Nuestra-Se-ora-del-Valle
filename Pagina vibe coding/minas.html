@@ -71,16 +71,17 @@
   </style>
 </head>
 <body>
+  <div style="position:fixed;top:10px;right:15px;color:gold;font-weight:bold;">
+    <span id="saldo">💰 Saldo: $0</span>
+  </div>
+
+  <script src="casino.js"></script>
+
   <h1>💣 Minas</h1>
 
   <div class="config">
     <label for="cantMinas">Cantidad de minas: </label>
-    <select id="cantMinas">
-      <option value="3">3</option>
-      <option value="5" selected>5</option>
-      <option value="8">8</option>
-      <option value="10">10</option>
-    </select>
+    <select id="cantMinas"></select>
     <button onclick="iniciar()">Iniciar juego</button>
   </div>
 
@@ -92,12 +93,23 @@
   <script>
     const grid = document.getElementById("grid");
     const mensaje = document.getElementById("mensaje");
+    const select = document.getElementById("cantMinas");
+
+    // Generar opciones de 1 a 24
+    for (let i = 1; i <= 24; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      if (i === 5) opt.selected = true;
+      select.appendChild(opt);
+    }
+
     let minas = [];
     let totalMinas = 5;
     let juegoActivo = false;
 
     function iniciar() {
-      totalMinas = parseInt(document.getElementById("cantMinas").value);
+      totalMinas = parseInt(select.value);
       crearTablero();
       mensaje.textContent = "";
       juegoActivo = true;
@@ -107,7 +119,6 @@
       grid.innerHTML = "";
       minas = [];
 
-      // genera posiciones únicas de minas
       while (minas.length < totalMinas) {
         const pos = Math.floor(Math.random() * 25);
         if (!minas.includes(pos)) minas.push(pos);
@@ -134,7 +145,6 @@
         cell.classList.add("safe");
         cell.textContent = "💎";
 
-        // verificar si ganó
         const seguras = document.querySelectorAll(".safe").length;
         if (seguras === 25 - totalMinas) {
           mensaje.textContent = "🏆 ¡Ganaste! Evitaste todas las minas.";
@@ -152,6 +162,11 @@
         }
       });
     }
+
+    iniciar();
+  </script>
+</body>
+</html>
 
     // iniciar por defecto
     iniciar();
