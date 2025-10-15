@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blackjack - Casino Royale</title>
+<style>
+  body {
+    background: radial-gradient(circle at center, #0a0a0a, #000);
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    min-height: 100vh;
+  }
+
+  h1 {
+    color: gold;
+    margin-top: 20px;
+    text-shadow: 0 0 10px gold;
+  }
+
+  .mesa {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .hand {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .carta {
+    width: 80px;
+    height: 120px;
+    border-radius: 10px;
+    background: white;
+    color: black;
+    border: 2px solid #ccc;
+    font-weight: bold;
+    font-size: 22px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  }
+
+  .rojo {
+    color: crimson;
+  }
+
+  .carta span {
+    position: absolute;
+    font-size: 16px;
+  }
+
+  .carta .sup {
+    top: 5px; left: 8px;
+  }
+
+  .carta .inf {
+    bottom: 5px; right: 8px;
+    transform: rotate(180deg);
+  }
+
+  button {
+    background: gold;
+    color: black;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 5px;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background: #ffd700cc;
+  }
+
+  #mensaje {
+    font-size: 1.3rem;
+    margin-top: 15px;
+  }
+
+  a {
+    color: #aaa;
+    text-decoration: none;
+    display: block;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<h1>🃏 Blackjack</h1>
+
+<div class="mesa">
+  <div>
+    <h2>Crupier</h2>
+    <div id="dealer" class="hand"></div>
+  </div>
+
+  <div>
+    <h2>Tú</h2>
+    <div id="player" class="hand"></div>
+  </div>
+</div>
+
+<div>
+  <button onclick="pedirCarta()">Pedir carta</button>
+  <button onclick="plantarse()">Plantarse</button>
+  <button onclick="reiniciar()">Reiniciar</button>
+</div>
+
+<p id="mensaje"></p>
+<a href="index.html">⬅ Volver al menú</a>
+
+<script>
+const palos = ['♠','♥','♦','♣'];
+const valores = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+let mazo = [], jugador = [], crupier = [], fin = false;
+
+function crearMazo(){
+  mazo = [];
+  for(let p of palos){
+    for(let v of valores){
+      mazo.push({valor:v, palo:p});
+    }
+  }
+  mazo.sort(()=>Math.random()-0.5);
+}
+
+function valorCarta(c){
+  if(['J','Q','K'].includes(c.valor)) return 10;
+  if(c.valor==='A') return 11;
+  return parseInt(c.valor);
+}
+
+function total(mano){
+  let suma = mano.reduce((a,c)=>a+valorCarta(c),0);
+  // Ajuste por ases
+  mano.filter(c=>c.valor==='A').forEach(()=>{ if(suma>21) suma-=10; });
+  return suma;
+}
+
+function mostrarMano(id, mano, ocultarPrimera=false){
+  const div = document.getElementById(id);
+  div.innerHTML = '';
+  mano.forEach((carta,i)=>{
+    const card = document.createElement('div');
+    card.classList.add('carta');
+    if(carta.palo==='♥' || carta.palo==='♦') card.classList.add('rojo');
+    if(ocultarPrimera && i===0 && !fin){
+      card.style.background = 'linear-gradient(45deg, #555, #222)';
+      card.style.color = 'transparent';
+      card.innerHTML = '';
+    } else {
+      card.innerHTML = `
+        <span class="sup">${carta.valor}${carta.palo}</span>
+        ${carta.palo}
+        <span class="inf">${carta.valor}${carta.palo}</span>
+      `;
+    }
+    div.appendChild(card);
+  });
+}
+
+function pedirCarta(){
+  if(fin) return;
+  jugador.push(mazo.pop());
+  mostrarMano('player', jugador);
+  if(total(jugador)>21){
+    document.getElementById('mensaje').textContent = "💥 Te pasaste. Pierdes.";
+    fin = true;
+    mostrarMano('dealer', crupier, false);
+  }
+}
+
+function plantarse(){
+  if(fin) return;
+  while(total(crupier)<17) crupier.push(mazo.pop());
+  mostrarMano('dealer', crupier, false);
+
+  const tJ = total(jugador);
+  const tC = total(crupier);
+
+  let msg = '';
+  if(tC>21 || tJ>tC) msg = "🏆 ¡Ganaste!";
+  else if(tC===tJ) msg = "🤝 Empate.";
+  else msg = "😞 Pierdes.";
+
+  document.getElementById('mensaje').textContent = msg;
+  fin = true;
+}
+
+function reiniciar(){
+  crearMazo();
+  jugador = [mazo.pop(), mazo.pop()];
+  crupier = [mazo.pop(), mazo.pop()];
+  fin = false;
+  document.getElementById('mensaje').textContent = '';
+  mostrarMano('player', jugador);
+  mostrarMano('dealer', crupier, true);
+}
+
+reiniciar();
+</script>
+</body>
+</html>

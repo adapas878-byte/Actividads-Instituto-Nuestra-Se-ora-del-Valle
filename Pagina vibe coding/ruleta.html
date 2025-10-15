@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ruleta con Bola (0–36) — Correcta</title>
+  <style>
+    :root{ --gold:#e0b000; }
+    html,body{
+      height:100%; margin:0;
+      background:radial-gradient(circle,#111 0%,#000 70%);
+      color:#fff; font-family:Poppins,system-ui,sans-serif;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    }
+    h1{ color:var(--gold); margin:0; }
+    .pointer{ width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:28px solid #ff3b3b;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));margin-bottom:-10px;}
+    .wrap{position:relative;width:560px;max-width:94vw;display:flex;flex-direction:column;align-items:center;}
+    canvas{width:520px;height:520px;max-width:92vw;border:8px solid var(--gold);border-radius:50%;box-shadow:0 0 36px rgba(224,176,0,.25),inset 0 2px 10px rgba(0,0,0,.6);background:#0d0d0d;}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+    button{background:var(--gold);color:#111;border:none;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.4);}
+    button:hover{transform:translateY(-2px);}
+    #resultado{min-height:1.4em;font-weight:700;margin-top:6px;}
+    a{color:#bdbdbd;text-decoration:none;margin-top:6px;}
+    a:hover{color:var(--gold);}
+    @media(max-width:560px){canvas{width:92vw;height:92vw;}}
+  </style>
+</head>
+<body>
+  <h1>🎯 Ruleta (0–36) con Bola — Precisa</h1>
+  <div class="pointer" aria-hidden="true"></div>
+  <div class="wrap">
+    <canvas id="ruleta" width="520" height="520"></canvas>
+    <div class="controls">
+      <button id="spinBtn">🎡 Girar</button>
+      <button id="resetBtn">🔁 Reiniciar</button>
+    </div>
+    <div id="resultado" aria-live="polite"></div>
+  </div>
+  <a href="index.html">⬅ Volver al menú</a>
+
+<script>
+/* ---------------- Configuración y estado ---------------- */
+const wheelOrder = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const redSet = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+
+const canvas = document.getElementById('ruleta');
+const ctx = canvas.getContext('2d', {alpha:false});
+const W = canvas.width, H = canvas.height;
+const cx = W/2, cy = H/2;
+const R = Math.min(W,H)/2 - 14;
+const total = wheelOrder.length; // 37
+const sectorAngle = 2*Math.PI/total;
+const sectorDeg = 360/total;
+const EPS = 1e-7;
+
+let wheelDeg = 0;              // rotación de la rueda (grados, horario)
+let ballDeg = 270;             // ángulo de la bola (0 derecha, 90 abajo, 180 izq, 270 arriba)
+let ballSpeed = 0;             // deg/s (signo horario positivo; antihorario negativo)
+let ballRadiusOuter = R - 18;  // carril externo
+let ballRadiusInner  = R - 58; // bolsillo interior
+let ballRadius = ballRadiusOuter;
+
+let spinning = false;
+let highlightIdx = null;       // para resaltar el sector ganador al final
+
+/* ---------------- Utilidades ---------------- */
+function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+/** Índice de sector para un ángulo RELATIVO a la rueda (deg 0…360) */
+function sectorIndexFromRelAngle(relDeg){
+  // normalizar con tolerancia para evitar 360 → 0 saltos
+  let a = ((relDeg % 360) + 360) % 360;      // 0..360
+  // sumar EPS para que 359.999999 caiga donde corresponde
+  let idx = Math.floor((a + EPS) / sectorDeg);
+  // seguridad absoluta
+  if (!Number.isFinite(idx)) idx = 0;
+  if (idx >= total) idx = 0;
+  if (idx < 0) idx = 0;
+  return idx;
+}
+
+/** Calcula ganador por posición REAL de la bola (no por puntero) */
+function calcWinnerByBall(){
+  // ángulo de la bola en el marco de la rueda (bola - rueda)
+  const rel = (ballDeg - wheelDeg + 3600) % 360;
+  const idx = sectorIndexFromRelAngle(rel);
+  const number = wheelOrder[idx];
+  const color  = number === 0 ? 'Verde' : (redSet.has(number) ? 'Rojo' : 'Negro');
+  return { idx, number, color };
+}
+
+/* ---------------- Dibujo ---------------- */
+function drawWheelBase(){
+  for (let i=0;i<total;i++){
+    const start = i*sectorAngle;
+    const end   = start + sectorAngle;
+    const n = wheelOrder[i];
+    const fill = (n===0) ? '#147a36' : (redSet.has(n) ? '#b71c1c' : '#0b0b0b');
+
+    // sector
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy, R, start, end);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = '#141414';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // numeración
+    ctx.save();
+    const mid = start + sectorAngle/2;
+    ctx.translate(cx,cy);
+    ctx.rotate(mid);
+    const textR = R - 34;
+    // pastilla
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(textR-28, -14, 56, 28, 6); ctx.fill(); }
+    else { ctx.fillRect(textR-28, -14, 56, 28); }
+    // número
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Poppins, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(n), textR, 0);
+    ctx.restore();
+  }
+
+  // centro
+  ctx.beginPath();
+  ctx.arc(cx,cy, R*0.26, 0, Math.PI*2);
+  ctx.fillStyle = '#101010';
+  ctx.fill();
+}
+
+function drawHighlight(idx){
+  if (idx == null) return;
+  const start = idx*sectorAngle;
+  const end   = start + sectorAngle;
+
+  ctx.save();
+  ctx.translate(cx,cy);
+  // halo exterior
+  ctx.beginPath();
+  ctx.arc(0,0, R, start, end);
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(255,215,0,0.55)';
+  ctx.stroke();
+  // aro interno
+  ctx.beginPath();
+  ctx.arc(0,0, R-62, start, end);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'rgba(255,215,0,0.45)';
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBall(angleDeg, radius){
+  const a = angleDeg * Math.PI/180;
+  const x = cx + radius * Math.cos(a);
+  const y = cy + radius * Math.sin(a);
+
+  // sombra
+  ctx.beginPath();
+  ctx.arc(x+2, y+3, 9, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.fill();
+
+  // bola
+  ctx.beginPath();
+  ctx.arc(x, y, 8.6, 0, Math.PI*2);
+  const g = ctx.createRadialGradient(x-3, y-3, 2, x, y, 9);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(1, '#cfcfcf');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.2)';
+  ctx.stroke();
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  // rueda rotada
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(wheelDeg * Math.PI/180);
+  ctx.translate(-cx,-cy);
+  drawWheelBase();
+  ctx.restore();
+
+  // highlight (sin rotar: calculado en marco global)
+  if (highlightIdx != null){
+    ctx.save();
+    // el highlight debe rotar con la rueda → aplicamos misma rotación
+    ctx.translate(cx,cy);
+    ctx.rotate(wheelDeg * Math.PI/180);
+    ctx.translate(-cx,-cy);
+    drawHighlight(highlightIdx);
+    ctx.restore();
+  }
+
+  // bola en marco global
+  drawBall(ballDeg, ballRadius);
+}
+
+/* ---------------- Animación ---------------- */
+function spin(){
+  if (spinning) return;
+  spinning = true;
+  highlightIdx = null;
+  document.getElementById('resultado').textContent = '';
+
+  const startWheel = wheelDeg;
+  const targetWheel = startWheel + 360*(6 + Math.floor(Math.random()*3)) + Math.random()*360;
+  const duration = 4600;
+  const startT = performance.now();
+
+  // bola: sentido contrario (antihorario = velocidad negativa)
+  ballDeg = 270; // arriba
+  ballSpeed = -(900 + Math.random()*360); // deg/s
+  const ballDecel = 0.985;            // frenado por frame
+  const settleWindow = 1000;          // ms finales para bajar al bolsillo
+
+  function frame(now){
+    const t = now - startT;
+    const p = clamp(t/duration, 0, 1);
+    const eased = easeOutCubic(p);
+
+    // rueda (ease-out)
+    wheelDeg = startWheel + (targetWheel - startWheel) * eased;
+
+    // bola (física simple con fricción)
+    const dt = 16;                    // aprox 60fps
+    ballSpeed *= ballDecel;
+    ballDeg = (ballDeg + (ballSpeed * dt/1000)) % 360;
+    if (ballDeg < 0) ballDeg += 360;
+
+    // descenso al radio interior (sin saltos al puntero)
+    if (t > duration - settleWindow){
+      const ratio = clamp((t - (duration - settleWindow)) / settleWindow, 0, 1);
+      ballRadius = ballRadiusOuter - (ballRadiusOuter - ballRadiusInner) * ratio;
+      // micro irregularidad (no cruzar sectores grandes)
+      if (Math.random() < 0.03){
+        ballDeg += (Math.random()*6 - 3); // +/- 3°
+      }
+    }
+
+    render();
+
+    if (t < duration){
+      requestAnimationFrame(frame);
+    } else {
+      // fin: fijar bola y calcular ganador por posición REAL de bola
+      ballRadius = ballRadiusInner;
+
+      const { idx, number, color } = calcWinnerByBall();
+      highlightIdx = idx;  // resaltar el sector exacto
+      render();
+
+      document.getElementById('resultado').textContent = `🎯 Salió el ${number} (${color})`;
+      spinning = false;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- Controles ---------------- */
+document.getElementById('spinBtn').addEventListener('click', spin);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  spinning = false;
+  wheelDeg = 0;
+  ballDeg = 270;
+  ballRadius = ballRadiusOuter;
+  highlightIdx = null;
+  document.getElementById('resultado').textContent = '';
+  render();
+});
+
+/* ---------------- Primer render ---------------- */
+render();
+</script>
+</body>
+</html>

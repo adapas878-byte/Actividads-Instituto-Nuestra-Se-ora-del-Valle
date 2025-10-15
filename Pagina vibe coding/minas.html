@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minas - Casino Royale</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #111, #000);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 { color: gold; }
+
+    .config {
+      margin: 15px 0;
+    }
+
+    select, button {
+      background: gold;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+      color: black;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid gold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cell:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .safe { background: limegreen; }
+    .mine { background: crimson; }
+
+    #mensaje { margin-top: 15px; font-size: 1.2rem; }
+
+    a {
+      color: #aaa;
+      text-decoration: none;
+      display: block;
+      margin-top: 20px;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>💣 Minas</h1>
+
+  <div class="config">
+    <label for="cantMinas">Cantidad de minas: </label>
+    <select id="cantMinas">
+      <option value="3">3</option>
+      <option value="5" selected>5</option>
+      <option value="8">8</option>
+      <option value="10">10</option>
+    </select>
+    <button onclick="iniciar()">Iniciar juego</button>
+  </div>
+
+  <div id="grid" class="grid"></div>
+  <p id="mensaje"></p>
+
+  <a href="index.html">⬅ Volver al menú</a>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const mensaje = document.getElementById("mensaje");
+    let minas = [];
+    let totalMinas = 5;
+    let juegoActivo = false;
+
+    function iniciar() {
+      totalMinas = parseInt(document.getElementById("cantMinas").value);
+      crearTablero();
+      mensaje.textContent = "";
+      juegoActivo = true;
+    }
+
+    function crearTablero() {
+      grid.innerHTML = "";
+      minas = [];
+
+      // genera posiciones únicas de minas
+      while (minas.length < totalMinas) {
+        const pos = Math.floor(Math.random() * 25);
+        if (!minas.includes(pos)) minas.push(pos);
+      }
+
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.onclick = () => clickCelda(cell, i);
+        grid.appendChild(cell);
+      }
+    }
+
+    function clickCelda(cell, i) {
+      if (!juegoActivo || cell.classList.contains("safe") || cell.classList.contains("mine")) return;
+
+      if (minas.includes(i)) {
+        cell.classList.add("mine");
+        cell.textContent = "💣";
+        mensaje.textContent = "💥 ¡Boom! Pisaste una mina.";
+        revelarMinas();
+        juegoActivo = false;
+      } else {
+        cell.classList.add("safe");
+        cell.textContent = "💎";
+
+        // verificar si ganó
+        const seguras = document.querySelectorAll(".safe").length;
+        if (seguras === 25 - totalMinas) {
+          mensaje.textContent = "🏆 ¡Ganaste! Evitaste todas las minas.";
+          juegoActivo = false;
+          revelarMinas();
+        }
+      }
+    }
+
+    function revelarMinas() {
+      document.querySelectorAll(".cell").forEach((cell, i) => {
+        if (minas.includes(i)) {
+          cell.classList.add("mine");
+          cell.textContent = "💣";
+        }
+      });
+    }
+
+    // iniciar por defecto
+    iniciar();
+  </script>
+</body>
+</html>
