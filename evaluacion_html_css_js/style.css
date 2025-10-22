@@ -1,0 +1,26 @@
+/* Estilo general */
+body {
+  font-family: sans-serif;
+  background-color: #f8f9fa;
+  transition: background-color 0.5s ease;
+}
+
+/* Colores de títulos */
+h2 {
+  color: #82257b;
+}
+
+/* Botón personalizado */
+.btn-custom {
+  background-color: #82257b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.btn-custom:hover {
+  background-color: #6d1f68;
+  transform: scale(1.05);
+}
